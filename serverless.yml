@@ -1,0 +1,39 @@
+service: lambda-tiler-cache
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: production
+
+  region: ${opt:region, 'us-east-1'}
+
+  environment:
+    PYTHONWARNINGS: ignore
+    GDAL_DATA: /var/task/share/gdal
+    GDAL_CACHEMAX: 512
+    VSI_CACHE: TRUE
+    VSI_CACHE_SIZE: 536870912
+    CPL_TMPDIR: /tmp
+    GDAL_HTTP_MERGE_CONSECUTIVE_RANGES: YES
+    GDAL_HTTP_MULTIPLEX: YES
+    GDAL_HTTP_VERSION: 2
+    GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+    MEMCACHED_HOST: ${opt:host}
+
+  apiGateway:
+    binaryMediaTypes:
+      - '*/*'
+
+package:
+  artifact: package.zip
+
+functions:
+  lambda-tiler-cache:
+    handler: lambda_tiler_cache.handler.app
+    memorySize: 1536
+    timeout: 20
+    events:
+      - http:
+          path: /{proxy+}
+          method: get
+          cors: true
